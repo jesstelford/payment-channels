@@ -1,0 +1,10 @@
+test/fixtures
+public/js/*.js
+public/js/*.map
+lib/
+tmp/
+node_modules
+*.swp
+*.swo
+*.vim
+tags
