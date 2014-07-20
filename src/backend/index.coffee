@@ -1,6 +1,7 @@
 h5bp = require 'h5bp'
 path = require 'path'
 logger = require "#{__dirname}/logger"
+Channel = require "#{__dirname}/channel"
 
 Handlebars = require 'handlebars'
 require './templates/index'
@@ -18,7 +19,12 @@ app = h5bp.createServer
 
 app.get '/', (req, res) ->
 
-  res.send 200, Handlebars.templates['index']({})
+  pubkey = req.query.pubkey
+
+  channel = new Channel(pubkey)
+  channel.createAndCommit (err, result) ->
+    return res.send(200, err) if err?
+    res.send 200, result
 
 
 onError = (res, code, message, url, extra) ->
