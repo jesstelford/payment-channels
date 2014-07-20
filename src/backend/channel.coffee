@@ -55,18 +55,16 @@ module.exports = class
         if not @verifyServerSignedT2 result.signature
           throw new Error "Couldn't verify server agreed to and signed T2 transaction"
 
-        # FIXME
-        agreementT1Sig = @agreementTxT1.someFunctionToGetTheSig()
+        agreementT1Hex = @agreementTxT1.serialize().toString('hex')
 
         # Create a payment that is just a fully unlocked refund
         paymentTxT3Builder = @createPayTxT3(0, undefined).tx
         paymentTxT3 = paymentTxT3Builder.sign(@privkeyK1).build()
 
-
         params =
           "channel.id": @channelId
-          "tx.commit": agreementT1Sig
-          "tx.firstPayment": paymentTxT3.outs[0].s.toString('hex')
+          "tx.commit": agreementT1Hex
+          "tx.firstPayment": paymentTxT3.serialize().toString('hex')
 
         return Q.nfcall(rpcClient.call, "channel.commit", [params], {})
 
