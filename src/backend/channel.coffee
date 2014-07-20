@@ -36,7 +36,7 @@ module.exports = class
 
         @agreementTxT1ScriptPubkey = agreementTx.outs[0].s.toString('hex')
 
-        refundTxInfo = @createRefundTxT2()
+        refundTxInfo = @createRefundTxT2 @timeLock
 
         params =
           "channel.id": @channelId # The id returned from "channel.open"
@@ -60,6 +60,7 @@ module.exports = class
 
   createAgreementTxT1: (serverPubkeyK2) ->
     multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyK1, serverPubkeyK2, @maxPayment
+    # TODO: What about all the input transactions? What are they signed with?
     multiSigTx = multiSigTxBuilder.sign([@privkeyK1]).build()
     return multiSigTx
 

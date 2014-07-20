@@ -1,4 +1,6 @@
+_ = require 'underscore'
 KeyModule = require 'bitcore/Key'
+Builder = require 'bitcore/TransactionBuilder'
 networks = require "#{__dirname}/networks.js"
 
 # TODO: Research: What's riskier; 1) Using satoshi's and worry about overflowing
@@ -54,7 +56,7 @@ module.exports =
   # @param refundPubKey Public key to send the refund to
   # @param amountNotRefundedK2 satoshi's to pay server
   # @param serverPubkeyK2 server's public key
-  # @param timeToLock TODO: What format does this take?
+  # @param timeToLock Unix timestamp before which the transaction will not be accepted into a block
   ###
   buildRollingRefundTxFromMultiSigOutput: (txToRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
 
@@ -70,7 +72,7 @@ module.exports =
     utxos = [{
       # address: input.addr, # Looking through bitcore implys we don't need this for a multisig input
       txid: txToRefund.getHash(),
-      vout: 0,
+      vout: 0, # There should only be a single output for the transactoin, so it's always vout number 0
       scriptPubKey: txToRefundHexScriptPubkey,
       amountSat: totalRefund
       confirmations: 1
@@ -90,10 +92,16 @@ module.exports =
         amountSat: amountNotRefundedK2
       }
 
-    if timeToLock > 0
-      # TODO: Lock transaction somehow
+    builderOpts = _({}).extend opts
 
-    builder = new Builder(opts)
+    if timeToLock > 0
+      builderOpts.lockTime = timeToLock
+      # Since the previous transaction we're attempting to spend hasn't
+      # necessarily been transmitted into the network, we need to flag that we
+      # could be spending an unconfirmed output
+      builderOpts.spendUnconfirmed = true
+
+    builder = new Builder(builderOpts)
       .setUnspent(utxos)
       .setOutputs(outs)
 
