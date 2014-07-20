@@ -27,6 +27,9 @@ BACKEND_LIB = $(BACKEND_SRC:$(BACKEND_JS_SRCDIR)/%.coffee=$(BACKEND_JS_LIBDIR)/%
 BACKEND_JSON = $(shell find "$(BACKEND_JS_SRCDIR)" -name "*.json" -type f)
 BACKEND_JSON_LIB = $(BACKEND_JSON:$(BACKEND_JS_SRCDIR)/%.json=$(BACKEND_JS_LIBDIR)/%.json)
 
+BACKEND_JS = $(shell find "$(BACKEND_JS_SRCDIR)" -name "*.js" -type f)
+BACKEND_JS_LIB = $(BACKEND_JS:$(BACKEND_JS_SRCDIR)/%.js=$(BACKEND_JS_LIBDIR)/%.js)
+
 BACKEND_TMPL_SRC = $(shell find "$(BACKEND_TMPL_SRCDIR)" -name "*.$(TEMPLATE_EXTENSION)" -type f)
 BACKEND_TMPL_LIB = $(BACKEND_TMPL_SRC:$(BACKEND_TMPL_SRCDIR)/%.$(TEMPLATE_EXTENSION)=$(BACKEND_TMPL_LIBDIR)/%.js)
 
@@ -52,7 +55,7 @@ all: backend browser test
 browser-templates: $(BROWSER_TMPL_DIST)
 	$(eval CJSIFYEXTRAPARAMS += $(BROWSER_TMPL_ALIASES))
 
-backend: $(BACKEND_TMPL_LIB) $(BACKEND_LIB) $(BACKEND_JSON_LIB)
+backend: $(BACKEND_TMPL_LIB) $(BACKEND_LIB) $(BACKEND_JSON_LIB) $(BACKEND_JS_LIB)
 
 backend-dev: backend
 
@@ -94,6 +97,10 @@ $(BACKEND_TMPL_LIBDIR)/%.js: $(BACKEND_TMPL_SRCDIR)/%.$(TEMPLATE_EXTENSION)
 	$(HANDLEBARS) "$<" --commonjs="handlebars" $(HANDLEBARS_PARAMS) --root="$(BACKEND_TMPL_SRCDIR)" --output "$@"
 
 $(BACKEND_JS_LIBDIR)/%.json: $(BACKEND_JS_SRCDIR)/%.json
+	@mkdir -p "$(@D)"
+	@cp "$<" "$@"
+
+$(BACKEND_JS_LIBDIR)/%.js: $(BACKEND_JS_SRCDIR)/%.js
 	@mkdir -p "$(@D)"
 	@cp "$<" "$@"
 
