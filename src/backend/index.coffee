@@ -20,11 +20,31 @@ app = h5bp.createServer
 app.get '/', (req, res) ->
 
   pubkey = req.query.pubkey
+  privkey = req.query.privkey
 
-  channel = new Channel(pubkey)
+  channel = new Channel(pubkey, privkey, 100000000)
   channel.createAndCommit (err, result) ->
-    return res.send(200, err) if err?
-    res.send 200, result
+    if err?
+      console.error err.stack
+      res.send(500, err.message)
+    # return res.send(500, err.message) if err?
+    res.write 200, "Payment channel created\n"
+
+    # Loop every second making a new micropayment
+    # This simulates a series of requests to access a chunk of API data, for
+    # example
+    interval = setInterval(
+      ->
+        channel.makeNewPayment 10000000, (err, result) ->
+          if err
+            clearInterval interval
+            res.write err.message + "\n"
+            return res.end()
+
+          res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
+
+      1000
+    )
 
 
 onError = (res, code, message, url, extra) ->

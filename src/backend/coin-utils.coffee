@@ -1,7 +1,7 @@
 _ = require 'underscore'
-KeyModule = require 'bitcore/Key'
-Builder = require 'bitcore/TransactionBuilder'
-Key = require 'bitcore/Key'
+bignum = require 'bignum'
+Builder = require 'bitcore/lib/TransactionBuilder'
+Key = require 'bitcore/lib/Key'
 networks = require "#{__dirname}/networks.js"
 
 # TODO: Research: What's riskier; 1) Using satoshi's and worry about overflowing
@@ -16,7 +16,7 @@ module.exports =
   decodePubkey: (hexStr) ->
     buf = new Buffer hexStr, 'hex'
     return undefined if not buf
-    key = new KeyModule.Key()
+    key = new Key.Key()
     key.public = buf
     return key
 
@@ -35,24 +35,24 @@ module.exports =
     # API)
     # TODO: Ensure that the 'amountSat' field is in satoshi's
     utxos = [{
-      address: input.addr
+      address: pubkeyHex1
       txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc"
       vout: 1
       scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac"
-      amountSat: 42960000
+      amount: 0.4296
       confirmations: 1
     }]
 
     outs = [{
       nreq: pubkeysForTransaction
       pubkeys: pubkeys
-      amountSat: amountSat
+      amount: "0.1"
     }]
 
     # partially build the transaction here, and let it be signed elsewhere
     builder = new Builder(opts)
-      .setUnspent(utxos)
-      .setOutputs(outs)
+    builder.setUnspent(utxos)
+    builder.setOutputs(outs)
 
     return builder
 
@@ -65,7 +65,7 @@ module.exports =
   ###
   buildRollingRefundTxFromMultiSigOutput: (txToRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
 
-    amountNotRefundedK2 || amountNotRefundedK2 = 0
+    if not amountNotRefundedK2 then amountNotRefundedK2 = 0
     totalRefund = txToRefund.valueOutSat
 
     if amountNotRefundedK2 > totalRefund
@@ -75,7 +75,7 @@ module.exports =
     txToRefundHexScriptPubkey = txToRefund.outs[0].s.toString('hex')
 
     utxos = [{
-      # address: input.addr, # Looking through bitcore implys we don't need this for a multisig input
+      # address: "abc123", # Looking through bitcore implys we don't need this for a multisig input
       txid: txToRefund.getHash().toString('hex'),
       vout: 0, # There should only be a single output for the transactoin, so it's always vout number 0
       scriptPubKey: txToRefundHexScriptPubkey,

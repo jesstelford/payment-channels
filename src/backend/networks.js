@@ -1,4 +1,3 @@
-var Put = require('bufferput');
 var buffertools = require('buffertools');
 var hex = function(hex) {
   return new Buffer(hex, 'hex');

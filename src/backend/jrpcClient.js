@@ -15,7 +15,7 @@ exports.call = function call(method, params, opts, callback)
 
 	var httpOpts = {
 		hostname: opts.hostname || 'localhost',
-		port: opts.port || 12882,
+		port: opts.port || 13882,
 		method: 'POST',
 		path: '/v1/',
 		headers: {
