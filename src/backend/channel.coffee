@@ -55,6 +55,27 @@ module.exports = class
         if not @verifyServerSignedT2 result.signature
           throw new Error "Couldn't verify server agreed to and signed T2 transaction"
 
+        # FIXME
+        agreementT1Sig = @agreementTxT1.someFunctionToGetTheSig()
+
+        # Create a payment that is just a fully unlocked refund
+        paymentTxT3Builder = @createPayTxT3(0, undefined).tx
+        paymentTxT3 = paymentTxT3Builder.sign(@privkeyK1).build()
+
+
+        params =
+          "channel.id": @channelId
+          "tx.commit": agreementT1Sig
+          "tx.firstPayment": paymentTxT3.outs[0].s.toString('hex')
+
+        return Q.nfcall(rpcClient.call, "channel.commit", [params], {})
+
+    ).then(
+      (result) ->
+        # Now, we have established the protocol, and just need to start
+        # requesting services by altering the amount in paymentTxT3, re-sign,
+        # and send it to the server
+
     ).done(
       (result) -> callback result
       callback
@@ -71,10 +92,7 @@ module.exports = class
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, 0, undefined, timeToLock
 
   verifyServerSignedT2: (signature) ->
-    # TODO
-    return true
-
-  signRefundTx: ->
+    return CoinUtils.verifyTxSig @refundTxT2, signature
 
   createPayTxT3: (amount, serverPubKey) ->
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, amount, serverPubKey, 0
