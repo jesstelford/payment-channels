@@ -1,6 +1,7 @@
 _ = require 'underscore'
 KeyModule = require 'bitcore/Key'
 Builder = require 'bitcore/TransactionBuilder'
+Key = require 'bitcore/Key'
 networks = require "#{__dirname}/networks.js"
 
 # TODO: Research: What's riskier; 1) Using satoshi's and worry about overflowing
@@ -18,6 +19,10 @@ module.exports =
     key = new KeyModule.Key()
     key.public = buf
     return key
+
+  verifyTxSig: (tx, sig) ->
+    hash = tx.serialize().toString('hex')
+    return Key.verifySignatureSync hash, sig
 
   build2of2MultiSigTx: (pubkeyHex1, pubkeyHex2, amountSat) ->
 

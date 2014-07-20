@@ -14,6 +14,7 @@ module.exports = class
   maxPayment: undefined
   agreementTxT1: undefined
   agreementTxT1ScriptPubkey: undefined
+  refundTxT2: undefined
 
   constructor: (@pubkeyK1, @privkeyK1, @maxPayment) ->
 
@@ -37,11 +38,12 @@ module.exports = class
         @agreementTxT1ScriptPubkey = agreementTx.outs[0].s.toString('hex')
 
         refundTxInfo = @createRefundTxT2 @timeLock
+        @refundTxT2 = refundTxInfo.tx.build()
 
         params =
           "channel.id": @channelId # The id returned from "channel.open"
           pubkey: @pubkeyK1 # pubkey of client
-          tx: refundTxInfo.tx # the refund transaction, hex encoded (unsigned)
+          tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
           txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
 
         # next step in the process
