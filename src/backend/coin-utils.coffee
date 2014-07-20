@@ -76,7 +76,7 @@ module.exports =
 
     utxos = [{
       # address: input.addr, # Looking through bitcore implys we don't need this for a multisig input
-      txid: txToRefund.getHash(),
+      txid: txToRefund.getHash().toString('hex'),
       vout: 0, # There should only be a single output for the transactoin, so it's always vout number 0
       scriptPubKey: txToRefundHexScriptPubkey,
       amountSat: totalRefund
