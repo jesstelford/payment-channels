@@ -2,17 +2,20 @@ Q = require 'q'
 CoinUtils = require "#{__dirname}/coin-utils"
 rpcClient = require "#{__dirname}/jrpcClient"
 
+T1INPUT_ID_FOR_T2_T3 = 0
+
 module.exports = class
 
   channelId: undefined
   timeLock: undefined
-  pubkey: undefined
-  privkey: undefined
-  serverPubkey: undefined
+  pubkeyK1: undefined
+  privkeyK1: undefined
+  serverPubkeyK2: undefined
   maxPayment: undefined
   agreementTxT1: undefined
+  agreementTxT1ScriptPubkey: undefined
 
-  constructor: (@pubkey, @privkey, @maxPayment) ->
+  constructor: (@pubkeyK1, @privkeyK1, @maxPayment) ->
 
   createAndCommit: (callback) ->
 
@@ -26,16 +29,18 @@ module.exports = class
       (result) ->
 
         @channelId = result.pubkey
-        @serverPubkey = result.pubkey
+        @serverPubkeyK2 = result.pubkey
         @timeLock = result.timelock.prefer
 
-        @agreementTxT1 = @createAgreementTxT1 @serverPubkey,
+        @agreementTxT1 = @createAgreementTxT1 @serverPubkeyK2
+
+        @agreementTxT1ScriptPubkey = agreementTx.outs[0].s.toString('hex')
 
         refundTxInfo = @createRefundTxT2()
 
         params =
           "channel.id": @channelId # The id returned from "channel.open"
-          pubkey: @pubkey # pubkey of client
+          pubkey: @pubkeyK1 # pubkey of client
           tx: refundTxInfo.tx # the refund transaction, hex encoded (unsigned)
           txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
 
@@ -53,23 +58,21 @@ module.exports = class
       callback
     )
 
-  createAgreementTxT1: (serverPubkey) ->
-    multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkey, serverPubkey, @maxPayment
-    multiSigTx = multiSigTxBuilder.sign([@privkey]).build()
-    return multiSigTx.serialize().toString('hex')
+  createAgreementTxT1: (serverPubkeyK2) ->
+    multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyK1, serverPubkeyK2, @maxPayment
+    multiSigTx = multiSigTxBuilder.sign([@privkeyK1]).build()
+    return multiSigTx
 
 
-  createRefundTxT2: ->
-    CoinUtils.buildRollingRefundTxFromMultiSigOutput
-    # TODO
-    return {
-      tx: ""
-      t1InIdx: 0
-    }
+  createRefundTxT2: (timeToLock) ->
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, 0, undefined, timeToLock
 
   verifyServerSignedT2: (signature) ->
     # TODO
     return true
 
   signRefundTx: ->
+
+  createPayTxT3: (amount, serverPubKey) ->
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, amount, serverPubKey, 0
 
