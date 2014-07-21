@@ -52,7 +52,9 @@ module.exports =
     # partially build the transaction here, and let it be signed elsewhere
     builder = new Builder(opts)
     builder.setUnspent(utxos)
+    console.log "unspent"
     builder.setOutputs(outs)
+    console.log "outs"
 
     return builder
 
@@ -63,10 +65,9 @@ module.exports =
   # @param serverPubkeyK2 server's public key
   # @param timeToLock Unix timestamp before which the transaction will not be accepted into a block
   ###
-  buildRollingRefundTxFromMultiSigOutput: (txToRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
+  buildRollingRefundTxFromMultiSigOutput: (txToRefund, totalRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
 
     if not amountNotRefundedK2 then amountNotRefundedK2 = 0
-    totalRefund = txToRefund.valueOutSat
 
     if amountNotRefundedK2 > totalRefund
       throw new Error "Cannot pay out more than the total original agreement"

@@ -15,6 +15,7 @@ module.exports = class
   serverPubkeyK2: undefined
   maxPayment: undefined
   agreementTxT1: undefined
+  agreementTxT1Unbuilt: undefined
   agreementTxT1ScriptPubkey: undefined
   refundTxT2: undefined
   paymentTotalTx3: 0
@@ -32,7 +33,8 @@ module.exports = class
         @timeLock = result["timelock.prefer"]
 
         console.info "Creating T1"
-        @agreementTxT1 = @_createAgreementTxT1 @serverPubkeyK2
+        @agreementTxT1Unbuilt = @_createAgreementTxT1 @serverPubkeyK2
+        @agreementTxT1 = @agreementTxT1Unbuilt.build()
         console.info "Created T1"
 
         @agreementTxT1ScriptPubkey = @agreementTxT1.outs[0].s.toString('hex')
@@ -47,6 +49,7 @@ module.exports = class
           tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
           txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
 
+        console.info "Setting Refund"
         # next step in the process
         return Q.nfcall(rpcClient.call, "channel.setRefund", [params], {})
 
@@ -67,6 +70,7 @@ module.exports = class
           "tx.commit": agreementT1Hex
           "tx.firstPayment": paymentTxT3.serialize().toString('hex')
 
+        console.info "Committing to transactions"
         return Q.nfcall(rpcClient.call, "channel.commit", [params], {})
 
     ).done(
@@ -95,18 +99,20 @@ module.exports = class
     rpcClient.call "channel.pay", [params], {}, callback
 
   _createAgreementTxT1: (serverPubkeyK2) ->
+    console.info "building 2of 2"
     multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyK1, serverPubkeyK2, @maxPayment
+    console.info "built 2of 2"
     # TODO: What about all the input transactions? What are they signed with?
-    multiSigTx = multiSigTxBuilder.sign([@privkeyK1]).build()
+    multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
     return multiSigTx
 
 
   _createRefundTxT2: (timeToLock) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, 0, undefined, timeToLock
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyK1, 0, undefined, timeToLock
 
   _verifyServerSignedT2: (signature) ->
     return CoinUtils.verifyTxSig @refundTxT2, signature
 
   _createPayTxT3: (amount, serverPubKey) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @pubkeyK1, amount, serverPubKey, 0
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyK1, amount, serverPubKey, 0
 
