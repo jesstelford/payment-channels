@@ -4,41 +4,65 @@
 
 A quickstart CoffeeScript node server, designed to serve compiled, minified, and source-mapped CoffeeScript modules to the browser, templated with Handlebars. 
 
-## Quickstart
+To get started, see the [Quickstart](#quickstart) section below.
 
-Install [nodejs](http://nodejs.org/download/).
+## Uses
 
-First we need to setup the server-side (the content provider):
+There are at least two immediately obvious scenarios where Payment Channels can
+be utilized:
 
-```bash
-$ git clone https://github.com/jesstelford/mcp.git && cd mcp
-$ npm install # Install all the npm dependancies
-$ ./bin/serverd --init
-$ SERVERD=password ./bin/serverd --init
-```
+ 1. Pay as you go API access
+ 2. Digital asset consumption
 
-*(replace `password` with the password you'd like to use to access the local
-database)*
+In both of these cases, traditional payment methods are unable to perform
+Micropayments due to the transaction fee potentially being higher than the
+transaction taking place. Payment Channels can solve this:
 
-Next, we need to setup the client-side (the content consumer / requester of
-payment channels).
+### Pay as you go API access (PAYGAA)
 
-In a new terminal window run the following:
+For computationally intestive API calls, it makes sense from the API owner's
+perspective to charge the client on a per usage basis (as opposed to a
+time-bound charge such as a monthly subscription).
 
-```bash
-$ git clone https://github.com/jesstelford/payment-channels.git && cd payment-channels
-$ npm install # Install all the npm dependancies
-$ make        # Build the project, and fire up a minimal server
-```
+Using Payment Channels, a client can create a new Channel to the server
+requesting one (or a group) of API request allocation. The client can then
+use the allocated request(s) with the server on a per-use basis. Once the
+allocated request(s) are used, a new micropayment is made via the Channel, and a
+new allocation is created.
 
-In a third window, we will now trigger the creation of a new payment channel:
+This is particulary useful for a client which lives on a server who can make
+these requests as part of the normal handshake to the API owner's server.
 
-```bash
-curl http://localhost:3000?pubkey=PUBKEY&privkey=PRIVKEY
-```
+### Digital asset consumption
 
-*(replace `PUBKEY` and `PRIVKEY` with the pubkey/privkey of `K1` that you wish
-to use. See below for more details)*
+A new (and controversial) payment model on the internet is the Pay Wall which
+blocks access to digital assets such as blog posts, media streaming services,
+etc, often requiring a registered account with the asset owner. Payment Channels
+can be used by a consumer to automatically gain access to and pay for these
+services without an account.
+
+For example, a browser plugin can be used to manage a local wallet where the
+usre's funds are stored. Upon accessing a page (blog post, news site, etc) which
+supports Payment Channels, the plugin can negotiate (with the user's permission)
+to gain access to the assets automatically.
+
+### Caveats
+
+There is one caveat with the Digital asset consumption use-case: Due to the
+nature of Payment Channels, the consumer would need to consume a minimum amount
+of assets in the time-lock period (see [point (3) of How It
+Works](#how-it-works) below). Otherwise, the total once the Channel is closed is
+not worth it for the asset owner.
+
+Examples where Payment Channels may not work:
+
+ * Reading a single news article in a day
+ * Watching a single video in an hour
+
+Examples where Payment Channels could work:
+
+ * Browsing an image database
+ * Streaming music for a day
 
 ## How it works
 
@@ -59,6 +83,41 @@ This implementation follows the algorithm laid out in the [*"Rapidly-adjusted (m
 > This continues until the session ends, or the 1-day period is getting close to expiry. The srever then signs and broadcasts the last transaction it saw, allocating the final amount to itself. The refund transaction is needed to handle the case where the server disappears or halts at any point, leaving the allocated value in limbo. If this happens then once the time lock has expired the client can broadcast the refund transaction and get back all the money.
 
 *Note:* I have marked the differences to the original algorithm in **bold**
+
+## Quickstart
+
+Install [nodejs](http://nodejs.org/download/).
+
+First we need to setup the server-side (the content provider):
+
+```bash
+$ git clone https://github.com/jesstelford/mcp.git && cd mcp
+$ npm install # Install all the npm dependancies
+$ ./bin/serverd --init
+$ SERVERD=password ./bin/serverd --init
+```
+
+*(replace `password` with the password you'd like to use to access the local
+database)*
+
+Next, we need to setup the client-side (the content consumer / requester of
+payment channels).  
+In a new terminal window run the following:
+
+```bash
+$ git clone https://github.com/jesstelford/payment-channels.git && cd payment-channels
+$ npm install # Install all the npm dependancies
+$ make        # Build the project, and fire up a minimal server
+```
+
+In a third window, we will now trigger the creation of a new payment channel:
+
+```bash
+curl http://localhost:3000?pubkey=PUBKEY&privkey=PRIVKEY
+```
+
+*(replace `PUBKEY` and `PRIVKEY` with the pubkey/privkey of `K1` that you wish
+to use. See below for more details)*
 
 ## Project Structure
 
