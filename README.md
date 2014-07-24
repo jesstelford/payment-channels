@@ -125,7 +125,7 @@ to use. See below for more details)*
 ## Project Structure
 
 See
-[http://github.com/jesstelford/coffee-boilerplate#project-structure](Coffee-Boilerplate)
+[Coffee-boilerplate](http://github.com/jesstelford/coffee-boilerplate#project-structure)
 for information on how this repo is laid out.
 
 ## Powered By
