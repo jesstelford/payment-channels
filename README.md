@@ -121,7 +121,7 @@ curl http://localhost:3000?pubkey=PUBKEY&privkey=PRIVKEY
 ```
 
 *(replace `PUBKEY` and `PRIVKEY` with the pubkey/privkey of `K1` that you wish
-to use. See below for more details)*
+to use. See [How It Works](#how-it-works) for more details)*
 
 ## Project Structure
 
