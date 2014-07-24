@@ -2,7 +2,10 @@
 
 *aka: Bitcoin Micropayments / Microtransactions*
 
-A quickstart CoffeeScript node server, designed to serve compiled, minified, and source-mapped CoffeeScript modules to the browser, templated with Handlebars. 
+Payment Channels make it easy for service providers and digital asset owners to
+have their users pay for only what they use! This project aims to provide a
+client implementation for both server and browser written in Javascript on top
+of BitPay's [Bitcore](http://bitcore.io).
 
 To get started, see the [Quickstart](#quickstart) section below.
 
