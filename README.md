@@ -1,4 +1,6 @@
-# Coffee Boilerplate
+# Bitcoin Payment Channels
+
+*aka: Bitcoin Micropayments / Microtransactions*
 
 A quickstart CoffeeScript node server, designed to serve compiled, minified, and source-mapped CoffeeScript modules to the browser, templated with Handlebars. 
 
@@ -6,131 +8,69 @@ A quickstart CoffeeScript node server, designed to serve compiled, minified, and
 
 Install [nodejs](http://nodejs.org/download/).
 
-Run the following commands
+First we need to setup the server-side (the content provider):
 
 ```bash
-$ git clone https://github.com/jesstelford/coffee-boilerplate.git && cd coffee-boilerplace
+$ git clone https://github.com/jesstelford/mcp.git && cd mcp
+$ npm install # Install all the npm dependancies
+$ ./bin/serverd --init
+$ SERVERD=password ./bin/serverd --init
+```
+
+*(replace `password` with the password you'd like to use to access the local
+database)*
+
+Next, we need to setup the client-side (the content consumer / requester of
+payment channels).
+
+In a new terminal window run the following:
+
+```bash
+$ git clone https://github.com/jesstelford/payment-channels.git && cd payment-channels
 $ npm install # Install all the npm dependancies
 $ make        # Build the project, and fire up a minimal server
 ```
 
-Open `http://localhost:3000` in your favourite browser
+In a third window, we will now trigger the creation of a new payment channel:
 
-(*note*: This boilerplate codebase contains no executable code, so you wont see
-anything when you launch that page)
+```bash
+curl http://localhost:3000?pubkey=PUBKEY&privkey=PRIVKEY
+```
+
+*(replace `PUBKEY` and `PRIVKEY` with the pubkey/privkey of `K1` that you wish
+to use. See below for more details)*
+
+## How it works
+
+This implementation follows the algorithm laid out in the [*"Rapidly-adjusted (micro)payments to a pre-determined party"](https://en.bitcoin.it/wiki/Contracts#Example_7:_Rapidly-adjusted_.28micro.29payments_to_a_pre-determined_party) Bitcoin wiki page:
+
+> We define the client to be the party sending value, and the server to be the party receiving it. This is written from the clients perspective **(aka: this repo)**
+> 
+> 1. Create a public key `K1`. Request a public key from the server `K2`.
+> 2. Create and sign but do not broadcast a transaction `T1` that sets up a payment of (for example) 10 BTC to an output requiring both the server's public key and one of your own to be used. A good way to do this is use `OP_CHECKMULTISIG`. The value to be used is chosen as an efficiency tradeoff.
+> 3. Create a refund transaction `T2` that is connected to the output of `T1` which sends all the money back to yourself. It has a time lock set for some time in the future, for instance a few hours. Don't sign it, and provide the unsigned transaction to the server. By convention, the output script is `2 K1 K2 2 CHECKMULTISIG`
+> 4. The server signs `T2` using its public key `K2` and returns the signature to the client. Note that it has not seen `T1` at this point, just the hash (which is in the unsigned `T2`).
+> 5. The client verifies the servers signature is correct and aborts if not.
+> 6. The client signs `T1` and passes the signature to the server, which now broadcasts the transaction (either party can do this if they both have connectivity). This locks in the money.
+> 7. The client then creates a new transaction, `T3`, which connects to `T1` like the refund transaction does and has two outputs. One goes to `K1` and the other goes to `K2`. It starts out with all value allocated to the first output (`K1`), ie, it does the same thing as the refund transaction but is not time locked. The client signs `T3` and provides the transaction and signature to the server.
+> 8. The server verifies the output to itself is of the expected size and verifies the client's provided signature is correct.
+> 9. When the client wishes to pay the server, it adjusts its copy of `T3` to allocate more value to the server's output and less to its own. It then re-signs the new `T3` and sends the **transaction** to the server. The server verifies the signature and continues.
+> 
+> This continues until the session ends, or the 1-day period is getting close to expiry. The srever then signs and broadcasts the last transaction it saw, allocating the final amount to itself. The refund transaction is needed to handle the case where the server disappears or halts at any point, leaving the allocated value in limbo. If this happens then once the time lock has expired the client can broadcast the refund transaction and get back all the money.
+
+*Note:* I have marked the differences to the original algorithm in **bold**
 
 ## Project Structure
 
-```bash
-├── lib                # Where the compiled backend coffeescript source is placed after `make X`
-├── log                # Winston will log here by default in development mode
-├── Makefile           # This Makefile defines the build (and other) tasks (see below for more)
-├── package.json       # Your project's description
-├── public             # Publically accessible directory
-│   ├── js             # Where the bundled coffeescript source is placed after `make X`
-│   └── vendor         # Place 3rd party assets here so it wont be erased upon compile
-├── src                # All your source will live here
-└── test               # Place your mocha test files here
-```
-
-The `src` directory is structured like so:
-```bash
-├── backend            # Where all your backend code lives
-│   ├── templates
-│   │   └── index.hbs  # The Handlebars template served up by the node server
-│   └── index.coffee   # The basic node server (powered by express)
-└── browser            # Where all your browser code lives
-    ├── templates
-    │   └── test.hbs   # An example Handlebars template rendered browser-side
-    ├── vendor         # CommonJS modules to be included in the browser bundle
-    └── module         # A directory of modules, each compiled down to a single .js file
-```
-
-The `module` directory is structured like so:
-```bash
-└── App                # The module's directory is also the name exported into global namespace
-    └── index.coffee   # The main CommonJs module, the entry point for this module
-└── SomeModule
-    └── index.coffee
-└── AnotherModule
-    └── index.coffee
-```
-
-See the `Makefile` to change some of the directories
-
-## Build info
-
-Available commands are contained in `Makefile`:
-
- * `$ make run-dev` / `$ make`: Same as `$ make browser-dev && make backend-dev && make node-dev`
- * `$ make run`: Same as `$ make browser && make backend && make node-stage`
- * `$ make node-dev`: Boot up the node server in development mode (does **not** recompile any code)
- * `$ make node-stage`: Boot up the node server in staging mode (does **not** recompile any code)
- * `$ make browser-dev`: Compile, minify, and source-map browser CoffeeScript & Handlebars
- * `$ make browser`: Compile and minify browser CoffeeScript & Handlebars
- * `$ make backend-dev`: Compile backend CoffeeScript & Handlebars
- * `$ make backend`: Compile backend CoffeeScript & Handlebars
- * `$ make test`: Run the `test/.coffee` tests through Mocha
- * `$ make clean`: Clean up the built files and source maps
- * `$ make loc`: Show the LOC (lines of code) count
- * `$ make all`: Same as `$ make backend && make browser && make test`
- * `$ make release-[patch|minor|major]`: Update `package.json` version, create a git tag, then push to `origin`
-
-### Modules Exported to the Browser
-
-All compiled and minified modules are declared by creating a directory within `src/browser/module`, and giving it a CommonJS style `index.coffee` file as the entry point.
-
-The module's directory name will be used to name the compiled and minified `.js` file dropped into `public/js`. For example, `src/browser/module/App/index.coffee` will be compiled into `public/js/App.js`.
-
-The directory name is also used as the exposed global variable for the module. In the above example, if you included `public/js/App.js` into the page, it would expose the variable `window.App`.
-
-### Logging
-
-[winston](https://github.com/flatiron/winston) powers the logging, extended to
-report errors in their own file (`application-error.log`) along side the more
-complete `application.log`.
-
-See `src/backend/index.coffee` for examples of logging.
-
-The output of the logging is determined by the following environment variables:
-
-**`NODE_ENV`**
- * `development` (default): will send all logs to the console
- * anything else: will send all logs to a file. See `LOG_DIR` below
-
-**`LOG_DIR`**
- * empty (default): will create `./log` and save logs there
- * anything else: will create the specified directory and save logs there (eg;
-   `/var/log/my_app` will save logs to
-   `/var/log/my_app/application[-error].log`)
-
-
-## Example
-
-See the `/src` directory for a basic example
-
-## Project Settings
-
-Set project-appropriate values in the `package.json` file:
-
- * `name`
- * `description`
- * `homepage`
- * `author`
- * `repository`
- * `bugs`
- * `licenses`
+See
+[http://github.com/jesstelford/coffee-boilerplate#project-structure](Coffee-Boilerplate)
+for information on how this repo is laid out.
 
 ## Powered By
 
- * [winston](https://github.com/flatiron/winston)
- * [CoffeeScriptRedux](https://github.com/michaelficarra/CoffeeScriptRedux)
- * [CommonJS](http://www.commonjs.org)
- * [Commonjs-everywhere](https://github.com/michaelficarra/commonjs-everywhere)
- * [Express](http://expressjs.com)
- * [Handlebars](http://handlebarsjs.com)
+ * [Coffee-boilerplate](https://github.com/jesstelford/coffee-boilerplate)
+ * [Bitcore](https://github.com/bitpay/bitcore)
  * [node.js](http://nodejs.org)
- * [npm](https://npmjs.org)
 
 ## Donations
 
