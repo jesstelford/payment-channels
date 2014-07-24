@@ -46,7 +46,7 @@ usre's funds are stored. Upon accessing a page (blog post, news site, etc) which
 supports Payment Channels, the plugin can negotiate (with the user's permission)
 to gain access to the assets automatically.
 
-### Caveats
+#### Caveats
 
 There is one caveat with the Digital asset consumption use-case: Due to the
 nature of Payment Channels, the consumer would need to consume a minimum amount
@@ -66,7 +66,7 @@ Examples where Payment Channels could work:
 
 ## How it works
 
-This implementation follows the algorithm laid out in the [*"Rapidly-adjusted (micro)payments to a pre-determined party"](https://en.bitcoin.it/wiki/Contracts#Example_7:_Rapidly-adjusted_.28micro.29payments_to_a_pre-determined_party) Bitcoin wiki page:
+This implementation follows the algorithm laid out in the [*"Rapidly-adjusted (micro)payments to a pre-determined party"*](https://en.bitcoin.it/wiki/Contracts#Example_7:_Rapidly-adjusted_.28micro.29payments_to_a_pre-determined_party) Bitcoin wiki page:
 
 > We define the client to be the party sending value, and the server to be the party receiving it. This is written from the clients perspective **(aka: this repo)**
 > 
