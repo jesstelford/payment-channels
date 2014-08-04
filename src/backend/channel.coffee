@@ -2,7 +2,8 @@ Q = require 'q'
 CoinUtils = require "#{__dirname}/coin-utils"
 rpcClient = require "#{__dirname}/jrpcClient"
 
-Q.longStackSupport = true
+if NODE_ENV is 'development'
+  Q.longStackSupport = true
 
 T1INPUT_ID_FOR_T2_T3 = 0
 
