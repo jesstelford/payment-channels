@@ -97,8 +97,8 @@ First we need to setup the server-side (the content provider):
 $ git clone https://github.com/jesstelford/mcp.git && cd mcp
 $ git checkout feature/payment-channels
 $ npm install # Install all the npm dependancies
-$ ./bin/serverd --init
 $ SERVERD=password ./bin/serverd --init
+$ SERVERD=password ./bin/serverd
 ```
 
 *(replace `password` with the password you'd like to use to access the local
