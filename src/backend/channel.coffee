@@ -11,17 +11,17 @@ module.exports = class
 
   channelId: undefined
   timeLock: undefined
-  pubkeyK1: undefined
+  pubkeyHashK1: undefined
   privkeyK1: undefined
   serverPubkeyK2: undefined
-  maxPayment: undefined
+  maxPaymentSatoshi: undefined
   agreementTxT1: undefined
   agreementTxT1Unbuilt: undefined
   agreementTxT1ScriptPubkey: undefined
   refundTxT2: undefined
   paymentTotalTx3: 0
 
-  constructor: (@pubkeyK1, @privkeyK1, @maxPayment) ->
+  constructor: (@pubkeyHashK1, @privkeyK1, @maxPaymentSatoshi) ->
 
   createAndCommit: (callback) ->
 
@@ -46,7 +46,7 @@ module.exports = class
 
         params =
           "channel.id": @channelId # The id returned from "channel.open"
-          pubkey: @pubkeyK1 # pubkey of client
+          pubkey: @pubkeyHashK1 # pubkey of client
           tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
           txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
 
@@ -101,7 +101,7 @@ module.exports = class
 
   _createAgreementTxT1: (serverPubkeyK2) ->
     console.info "building 2of 2"
-    multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyK1, serverPubkeyK2, @maxPayment
+    multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi
     console.info "built 2of 2"
     # TODO: What about all the input transactions? What are they signed with?
     multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
@@ -109,11 +109,11 @@ module.exports = class
 
 
   _createRefundTxT2: (timeToLock) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyK1, 0, undefined, timeToLock
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, 0, undefined, timeToLock
 
   _verifyServerSignedT2: (signature) ->
     return CoinUtils.verifyTxSig @refundTxT2, signature
 
   _createPayTxT3: (amount, serverPubKey) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyK1, amount, serverPubKey, 0
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, amount, serverPubKey, 0
 
