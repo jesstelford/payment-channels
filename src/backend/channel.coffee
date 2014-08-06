@@ -29,6 +29,8 @@ module.exports = class
     Q.nfcall(rpcClient.call, "channel.open", [{}], {}).then(
       (result) =>
 
+        # Use the pubkey as the channel ID as it's unique. The client should be
+        # creating a unique pubkey per channel anyway.
         @channelId = result.pubkey
         @serverPubkeyK2 = result.pubkey
         @timeLock = result["timelock.prefer"]
