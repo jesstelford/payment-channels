@@ -3,7 +3,7 @@ var https = require('https');
 
 var json_id = 1;
 
-exports.call = function call(method, params, opts, callback)
+exports.request = function request(method, params, opts, callback)
 {
 	var jreq = {
 		jsonrpc: "2.0",
