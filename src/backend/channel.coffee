@@ -42,8 +42,7 @@ module.exports = class
 
         console.info "Creating T1"
 
-        # promisify the node style method
-        return Q.ninvoke(this, '_createAgreementTxT1', @serverPubkeyK2)
+        return @_createAgreementTxT1 @serverPubkeyK2
 
     ).then(
       (@agreementTxT1Unbuilt) =>
@@ -114,15 +113,17 @@ module.exports = class
 
     return rpcClient.request("channel.pay", params)
 
-  _createAgreementTxT1: (serverPubkeyK2, callback) ->
+  _createAgreementTxT1: (serverPubkeyK2) ->
     console.info "building 2of 2"
 
-    CoinUtils.build2of2MultiSigTx @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi, (multiSigTxBuilder ) ->
-      console.info "built 2of 2"
-      # TODO: What about all the input transactions? What are they signed with?
-      multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
-      callback null, multiSigTx
-
+    # promisify the node style method
+    return Q.nfcall(CoinUtils.build2of2MultiSigTx, @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi).then(
+      (multiSigTxBuilder) ->
+        console.info "built 2of 2"
+        # TODO: What about all the input transactions? What are they signed with?
+        multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
+        callback null, multiSigTx
+    )
 
   _createRefundTxT2: (timeToLock) ->
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, 0, undefined, timeToLock
