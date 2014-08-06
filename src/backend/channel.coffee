@@ -34,7 +34,13 @@ module.exports = class
         @timeLock = result["timelock.prefer"]
 
         console.info "Creating T1"
-        @agreementTxT1Unbuilt = @_createAgreementTxT1 @serverPubkeyK2
+
+        # promisify the node style method
+        return Q.ninvoke(this, '_createAgreementTxT1', @serverPubkeyK2)
+
+    ).then(
+      (@agreementTxT1Unbuilt) =>
+
         @agreementTxT1 = @agreementTxT1Unbuilt.build()
         console.info "Created T1"
 
@@ -99,13 +105,14 @@ module.exports = class
 
     rpcClient.call "channel.pay", [params], {}, callback
 
-  _createAgreementTxT1: (serverPubkeyK2) ->
+  _createAgreementTxT1: (serverPubkeyK2, callback) ->
     console.info "building 2of 2"
-    multiSigTxBuilder = CoinUtils.build2of2MultiSigTx @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi
-    console.info "built 2of 2"
-    # TODO: What about all the input transactions? What are they signed with?
-    multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
-    return multiSigTx
+
+    CoinUtils.build2of2MultiSigTx @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi, (multiSigTxBuilder ) ->
+      console.info "built 2of 2"
+      # TODO: What about all the input transactions? What are they signed with?
+      multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
+      callback null, multiSigTx
 
 
   _createRefundTxT2: (timeToLock) ->

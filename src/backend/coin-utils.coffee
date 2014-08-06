@@ -3,6 +3,8 @@ bignum = require 'bignum'
 Builder = require 'bitcore/lib/TransactionBuilder'
 Key = require 'bitcore/lib/Key'
 networks = require "#{__dirname}/networks.js"
+BlockApi = require "#{__dirname}/adapters/blockio"
+
 
 # TODO: Research: What's riskier; 1) Using satoshi's and worry about overflowing
 # the integer type, or 2) Using BTC's and worry about Javascript's innacuracies?
@@ -24,24 +26,12 @@ module.exports =
     hash = tx.serialize().toString('hex')
     return Key.verifySignatureSync hash, sig
 
-  build2of2MultiSigTx: (pubkeyHex1, pubkeyHex2, amountSat) ->
+  build2of2MultiSigTx: (pubkeyHex1, pubkeyHex2, amountSat, callback) ->
 
     pubkeysForTransaction = 2
 
     # Using an OP_CHECKMULTISIG transaction for 2 of 2 multisig
     pubkeys = [pubkeyHex1, pubkeyHex2]
-
-    # TODO: where can I get these from? a bitcoind instance? API? (Let's go with
-    # API)
-    # TODO: Ensure that the 'amountSat' field is in satoshi's
-    utxos = [{
-      address: pubkeyHex1
-      txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc"
-      vout: 1
-      scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac"
-      amount: 0.4296
-      confirmations: 1
-    }]
 
     outs = [{
       nreq: pubkeysForTransaction
@@ -49,14 +39,16 @@ module.exports =
       amount: "0.1"
     }]
 
-    # partially build the transaction here, and let it be signed elsewhere
-    builder = new Builder(opts)
-    builder.setUnspent(utxos)
-    console.log "unspent"
-    builder.setOutputs(outs)
-    console.log "outs"
+    BlockApi.unspentOutputs pubkeyHex1, (err, utxos) ->
 
-    return builder
+      # partially build the transaction here, and let it be signed elsewhere
+      builder = new Builder(opts)
+      builder.setUnspent(utxos)
+      console.log "unspent"
+      builder.setOutputs(outs)
+      console.log "outs"
+
+      callback null, builder
 
   ###
   # @param txToRefund a bitcore transaction to refund
