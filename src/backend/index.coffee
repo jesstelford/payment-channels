@@ -36,13 +36,14 @@ app.get '/', (req, res) ->
       # example
       interval = setInterval(
         ->
-          channel.makeNewPayment 10000000, (err, result) ->
-            if err
+          channel.makeNewPayment(10000000).then(
+            (result) ->
+              res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
+            (err) ->
               clearInterval interval
               res.write err.message + "\n"
               return res.end()
-
-            res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
+          )
 
         1000
       )

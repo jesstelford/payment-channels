@@ -96,6 +96,7 @@ module.exports = class
 
   ###
   # @param cost Satoshi's that server is charging per microtransaction
+  # @return Promise resolved with true on success
   ###
   makeNewPayment: (cost, callback) ->
     # Now, we have established the protocol, and just need to start
@@ -112,11 +113,7 @@ module.exports = class
       "channel.id": @channelId
       "tx.payment": paymentTxT3.serialize().toString('hex')
 
-    rpcClient.request("channel.pay", params).then(
-      (result) -> callback null, result
-      callback
-    )
-    return
+    return rpcClient.request("channel.pay", params)
 
   _createAgreementTxT1: (serverPubkeyK2, callback) ->
     console.info "building 2of 2"
