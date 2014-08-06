@@ -1,6 +1,8 @@
 Q = require 'q'
 CoinUtils = require "#{__dirname}/coin-utils"
-rpcClient = require "#{__dirname}/jrpcClient"
+
+httpOpts = {}
+rpcClient = require("#{__dirname}/mcp-jrpc")(httpOpts)
 
 if NODE_ENV is 'development'
   Q.longStackSupport = true
@@ -30,7 +32,7 @@ module.exports = class
 
     console.info "Opening the channel"
 
-    Q.nfcall(rpcClient.request, "channel.open", [params], httpOpts).then(
+    rpcClient.request("channel.open", params).then(
       (result) =>
 
         # Use the pubkey as the channel ID as it's unique. The client should be
@@ -64,7 +66,7 @@ module.exports = class
 
         console.info "Setting Refund"
         # next step in the process
-        return Q.nfcall(rpcClient.request, "channel.setRefund", [params], httpOpts)
+        return rpcClient.request("channel.setRefund", params)
 
     ).then(
       (result) =>
@@ -84,7 +86,8 @@ module.exports = class
           "tx.firstPayment": paymentTxT3.serialize().toString('hex')
 
         console.info "Committing to transactions"
-        return Q.nfcall(rpcClient.request, "channel.commit", [params], httpOpts)
+
+        return rpcClient.request("channel.commit", params)
 
     ).done(
       (result) => callback null, result
@@ -109,7 +112,11 @@ module.exports = class
       "channel.id": @channelId
       "tx.payment": paymentTxT3.serialize().toString('hex')
 
-    rpcClient.request "channel.pay", [params], httpOpts, callback
+    rpcClient.request("channel.pay", params).then(
+      (result) -> callback null, result
+      callback
+    )
+    return
 
   _createAgreementTxT1: (serverPubkeyK2, callback) ->
     console.info "building 2of 2"
