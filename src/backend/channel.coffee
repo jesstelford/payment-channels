@@ -27,7 +27,6 @@ module.exports = class
 
   createAndCommit: (callback) ->
 
-    httpOpts = {}
     params = {}
 
     console.info "Opening the channel"
