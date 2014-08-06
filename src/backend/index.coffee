@@ -30,21 +30,22 @@ app.get '/', (req, res) ->
     # return res.send(500, err.message) if err?
     res.write 200, "Payment channel created\n"
 
-    # Loop every second making a new micropayment
-    # This simulates a series of requests to access a chunk of API data, for
-    # example
-    interval = setInterval(
-      ->
-        channel.makeNewPayment 10000000, (err, result) ->
-          if err
-            clearInterval interval
-            res.write err.message + "\n"
-            return res.end()
+    if process.env.NODE_ENV is 'development'
+      # Loop every second making a new micropayment
+      # This simulates a series of requests to access a chunk of API data, for
+      # example
+      interval = setInterval(
+        ->
+          channel.makeNewPayment 10000000, (err, result) ->
+            if err
+              clearInterval interval
+              res.write err.message + "\n"
+              return res.end()
 
-          res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
+            res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
 
-      1000
-    )
+        1000
+      )
 
 
 onError = (res, code, message, url, extra) ->

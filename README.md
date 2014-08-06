@@ -111,7 +111,7 @@ In a new terminal window run the following:
 ```bash
 $ git clone https://github.com/jesstelford/payment-channels.git && cd payment-channels
 $ npm install # Install all the npm dependancies
-$ make        # Build the project, and fire up a minimal server
+$ NODE_ENV=development make        # Build the project, and fire up a minimal server in dev mode
 ```
 
 In a third window, we will now trigger the creation of a new payment channel:
