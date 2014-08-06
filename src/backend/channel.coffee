@@ -34,11 +34,7 @@ module.exports = class
     rpcClient.request("channel.open", params).then(
       (result) =>
 
-        # Use the pubkey as the channel ID as it's unique. The client should be
-        # creating a unique pubkey per channel anyway.
-        @channelId = result.pubkey
-        @serverPubkeyK2 = result.pubkey
-        @timeLock = result["timelock.prefer"]
+        @_processNewChannel result
 
         console.info "Creating T1"
 
@@ -47,24 +43,7 @@ module.exports = class
     ).then(
       (@agreementTxT1Unbuilt) =>
 
-        @agreementTxT1 = @agreementTxT1Unbuilt.build()
-        console.info "Created T1"
-
-        @agreementTxT1ScriptPubkey = @agreementTxT1.outs[0].s.toString('hex')
-
-        refundTxInfo = @_createRefundTxT2 @timeLock
-        console.info "Created T2"
-        @refundTxT2 = refundTxInfo.tx.build()
-
-        params =
-          "channel.id": @channelId # The id returned from "channel.open"
-          pubkey: @pubkeyHashK1 # pubkey of client
-          tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
-          txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
-
-        console.info "Setting Refund"
-        # next step in the process
-        return rpcClient.request("channel.setRefund", params)
+        return @_buildAndSendTimelockedRefundTx()
 
     ).then(
       (result) =>
@@ -113,6 +92,13 @@ module.exports = class
 
     return rpcClient.request("channel.pay", params)
 
+  _processNewChannel: (newChannel) ->
+    # Use the pubkey as the channel ID as it's unique. The client should be
+    # creating a unique pubkey per channel anyway.
+    @channelId = newChannel.pubkey
+    @serverPubkeyK2 = newChannel.pubkey
+    @timeLock = newChannel["timelock.prefer"]
+
   _createAgreementTxT1: (serverPubkeyK2) ->
     console.info "building 2of 2"
 
@@ -124,6 +110,34 @@ module.exports = class
         multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
         callback null, multiSigTx
     )
+
+  _buildAndSendTimelockedRefundTx: ->
+
+    @_buildTimelockedRefundTx()
+    params = @_prepareRefundTxForServer()
+
+    console.info "Setting Refund"
+    return rpcClient.request("channel.setRefund", params)
+
+  _buildTimelockedRefundTx: ->
+
+    @agreementTxT1 = @agreementTxT1Unbuilt.build()
+    console.info "Created T1"
+
+    @agreementTxT1ScriptPubkey = @agreementTxT1.outs[0].s.toString('hex')
+
+    refundTxInfo = @_createRefundTxT2 @timeLock
+    console.info "Created T2"
+    @refundTxT2 = refundTxInfo.tx.build()
+
+  _prepareRefundTxForServer: ->
+
+    return {
+      "channel.id": @channelId # The id returned from "channel.open"
+      pubkey: @pubkeyHashK1 # pubkey of client
+      tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
+      txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
+    }
 
   _createRefundTxT2: (timeToLock) ->
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, 0, undefined, timeToLock
