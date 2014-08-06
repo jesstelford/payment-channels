@@ -25,8 +25,12 @@ module.exports = class
 
   createAndCommit: (callback) ->
 
+    httpOpts = {}
+    params = {}
+
     console.info "Opening the channel"
-    Q.nfcall(rpcClient.request, "channel.open", [{}], {}).then(
+
+    Q.nfcall(rpcClient.request, "channel.open", [params], httpOpts).then(
       (result) =>
 
         # Use the pubkey as the channel ID as it's unique. The client should be
@@ -60,7 +64,7 @@ module.exports = class
 
         console.info "Setting Refund"
         # next step in the process
-        return Q.nfcall(rpcClient.request, "channel.setRefund", [params], {})
+        return Q.nfcall(rpcClient.request, "channel.setRefund", [params], httpOpts)
 
     ).then(
       (result) =>
@@ -80,7 +84,7 @@ module.exports = class
           "tx.firstPayment": paymentTxT3.serialize().toString('hex')
 
         console.info "Committing to transactions"
-        return Q.nfcall(rpcClient.request, "channel.commit", [params], {})
+        return Q.nfcall(rpcClient.request, "channel.commit", [params], httpOpts)
 
     ).done(
       (result) => callback null, result
@@ -105,7 +109,7 @@ module.exports = class
       "channel.id": @channelId
       "tx.payment": paymentTxT3.serialize().toString('hex')
 
-    rpcClient.request "channel.pay", [params], {}, callback
+    rpcClient.request "channel.pay", [params], httpOpts, callback
 
   _createAgreementTxT1: (serverPubkeyK2, callback) ->
     console.info "building 2of 2"
