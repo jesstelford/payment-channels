@@ -1,9 +1,14 @@
+_ = require 'underscore'
 Q = require 'q'
 request = require 'request'
 
+network = if process.env.NODE_ENV is 'production'
+  'BTC'
+else
+  'BTCTEST'
+
 buildUrl = (address) ->
-  # TODO: Build a valid GET url
-  return "http://block.io/#{address}"
+  return "http://chain.so/api/v2/get_tx_unspent/#{network}/#{address}"
 
 ###
 Expected output format:
@@ -26,20 +31,20 @@ unspentOutputs = (address, next) ->
 
   request options, (err, response, body) ->
 
-    if not err? and (response.statusCode isnt 200 or (body.error? and body.success isnt 1))
+    if not err? and (response.statusCode isnt 200 or (body.status? and body.status isnt "success"))
       err = body.err
 
-    body = [{
-      address: address
-      txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc"
-      vout: 1
-      scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac"
-      amount: 0.4296
-      amountSat: 42960000
-      confirmations: 1
-    }]
+    result = _(body.data.txns).map (txn) ->
+      return {
+        address: body.data.address
+        txid: txn.txid
+        vout: txn.output_no
+        scriptPubKey: txn.script_hex
+        amount: txn.value
+        confirmations: txn.confirmations
+      }
 
-    next err, body
+    next err, result
 
 pushTransaction = (transaction, next) ->
   # Never succeed

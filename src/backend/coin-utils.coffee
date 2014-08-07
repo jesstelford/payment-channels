@@ -3,7 +3,7 @@ bignum = require "../node_modules/bitcore/node_modules/bignum"
 Builder = require 'bitcore/lib/TransactionBuilder'
 Key = require 'bitcore/lib/Key'
 networks = require "#{__dirname}/networks.js"
-BlockApi = require "#{__dirname}/adapters/blockio"
+BlockApi = require "#{__dirname}/adapters/sochain"
 
 
 T1INPUT_ID_FOR_T2_T3 = 0
