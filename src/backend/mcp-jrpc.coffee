@@ -1,3 +1,4 @@
+Q = require "q"
 rpcClient = require "#{__dirname}/jrpcClient"
 
 module.exports = (httpOpts) ->
