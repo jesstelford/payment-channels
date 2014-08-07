@@ -35,9 +35,7 @@ module.exports = class
       (result) =>
 
         @_processNewChannel result
-
         console.info "Creating T1"
-
         return @_createAgreementTxT1 @serverPubkeyK2
 
     ).then(
@@ -51,20 +49,7 @@ module.exports = class
         if not @_verifyServerSignedT2 result.signature
           throw new Error "Couldn't verify server agreed to and signed T2 transaction"
 
-        agreementT1Hex = @agreementTxT1.serialize().toString('hex')
-
-        # Create a payment that is just a fully unlocked refund
-        paymentTxT3Builder = @_createPayTxT3(@paymentTotalTx3, undefined).tx
-        paymentTxT3 = paymentTxT3Builder.sign(@privkeyK1).build()
-
-        params =
-          "channel.id": @channelId
-          "tx.commit": agreementT1Hex
-          "tx.firstPayment": paymentTxT3.serialize().toString('hex')
-
-        console.info "Committing to transactions"
-
-        return rpcClient.request("channel.commit", params)
+        return @_createFirstPaymentTx()
 
     ).done(
       (result) => callback null, result
@@ -107,6 +92,9 @@ module.exports = class
       (multiSigTxBuilder) ->
         console.info "built 2of 2"
         # TODO: What about all the input transactions? What are they signed with?
+        # It should be that the only unspent output is for the channel id's
+        # address. Ie; the user must transfer coins to a new wallet for each
+        # channel use. Alternatively (and better), we can move to p2sh multi-sig
         multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
         callback null, multiSigTx
     )
@@ -138,6 +126,24 @@ module.exports = class
       tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
       txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
     }
+
+  _createFirstPaymentTx: ->
+
+    agreementT1Hex = @agreementTxT1.serialize().toString('hex')
+
+    # Create a payment that is just a fully unlocked refund
+    paymentTxT3Builder = @_createPayTxT3(@paymentTotalTx3, undefined).tx
+    paymentTxT3 = paymentTxT3Builder.sign(@privkeyK1).build()
+
+    params =
+      "channel.id": @channelId
+      "tx.commit": agreementT1Hex
+      "tx.firstPayment": paymentTxT3.serialize().toString('hex')
+
+    console.info "Committing to transactions"
+
+    return rpcClient.request("channel.commit", params)
+
 
   _createRefundTxT2: (timeToLock) ->
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, 0, undefined, timeToLock
