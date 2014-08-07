@@ -4,7 +4,7 @@ CoinUtils = require "#{__dirname}/coin-utils"
 httpOpts = {}
 rpcClient = require("#{__dirname}/mcp-jrpc")(httpOpts)
 
-if NODE_ENV is 'development'
+if process.env.NODE_ENV is 'development'
   Q.longStackSupport = true
 
 T1INPUT_ID_FOR_T2_T3 = 0
