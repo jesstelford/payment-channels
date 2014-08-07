@@ -34,7 +34,7 @@ unspentOutputs = (address, next) ->
     if not err? and (response.statusCode isnt 200 or (body.status? and body.status isnt "success"))
       err = body.err
 
-    result = _(body.data.txns).map (txn) ->
+    result = _(body.data.txs).map (txn) ->
       return {
         address: body.data.address
         txid: txn.txid
