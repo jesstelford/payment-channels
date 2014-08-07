@@ -1,5 +1,5 @@
 _ = require 'underscore'
-bignum = require 'bignum'
+bignum = require "../node_modules/bitcore/node_modules/bignum"
 Builder = require 'bitcore/lib/TransactionBuilder'
 Key = require 'bitcore/lib/Key'
 networks = require "#{__dirname}/networks.js"
@@ -36,7 +36,7 @@ module.exports =
     outs = [{
       nreq: pubkeysForTransaction
       pubkeys: pubkeys
-      amount: "0.1"
+      amount: "0.1" # TODO: set the actual amount
     }]
 
     BlockApi.unspentOutputs pubkeyHex1, (err, utxos) ->
@@ -53,15 +53,15 @@ module.exports =
   ###
   # @param txToRefund a bitcore transaction to refund
   # @param refundPubKey Public key to send the refund to
-  # @param amountNotRefundedK2 satoshi's to pay server
+  # @param amountNotRefundedK2 satoshi's to pay server (an instance of bignum)
   # @param serverPubkeyK2 server's public key
   # @param timeToLock Unix timestamp before which the transaction will not be accepted into a block
   ###
   buildRollingRefundTxFromMultiSigOutput: (txToRefund, totalRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
 
-    if not amountNotRefundedK2 then amountNotRefundedK2 = 0
+    if not amountNotRefundedK2 or amountNotRefundedK2.eq(0) then amountNotRefundedK2 = bignum(0)
 
-    if amountNotRefundedK2 > totalRefund
+    if amountNotRefundedK2.gt(totalRefund)
       throw new Error "Cannot pay out more than the total original agreement"
 
     # txToRefundHex = txToRefund.serialize().toString('hex')
@@ -78,12 +78,12 @@ module.exports =
 
     outs = [{
       address: refundPubKey,
-      amountSat: totalRefund - amountNotRefundedK2
+      amountSat: totalRefund.sub(amountNotRefundedK2)
     }]
 
     # When there is an amount to actually pay to the server, deduct it from the
     # amount being refunded
-    if amountNotRefundedK2 > 0
+    if amountNotRefundedK2.gt(0)
       # add K2 as an output for total of amountNotRefundedK2 at output ID 1
       outs.push {
         address: serverPubkeyK2,

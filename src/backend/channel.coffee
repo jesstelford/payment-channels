@@ -1,4 +1,5 @@
 Q = require 'q'
+bignum = require "../node_modules/bitcore/node_modules/bignum"
 CoinUtils = require "#{__dirname}/coin-utils"
 
 httpOpts = {}
@@ -21,7 +22,7 @@ module.exports = class
   agreementTxT1Unbuilt: undefined
   agreementTxT1ScriptPubkey: undefined
   refundTxT2: undefined
-  paymentTotalTx3: 0
+  paymentTotalTx3: bignum('0')
 
   constructor: (@pubkeyHashK1, @privkeyK1, @maxPaymentSatoshi) ->
 
@@ -65,7 +66,7 @@ module.exports = class
     # requesting services by altering the amount in paymentTxT3, re-sign,
     # and send it to the server
 
-    @paymentTotalTx3 += cost
+    @paymentTotalTx3 = @paymentTotalTx3.add(cost)
 
     # Create a payment that is just a fully unlocked refund
     paymentTxT3Builder = @_createPayTxT3(@paymentTotalTx3, undefined).tx
@@ -146,11 +147,11 @@ module.exports = class
 
 
   _createRefundTxT2: (timeToLock) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, 0, undefined, timeToLock
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, bignum(@agreementTxT1Unbuilt.valueOutSat), @pubkeyHashK1, bignum(0), undefined, timeToLock
 
   _verifyServerSignedT2: (signature) ->
     return CoinUtils.verifyTxSig @refundTxT2, signature
 
   _createPayTxT3: (amount, serverPubKey) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, @agreementTxT1Unbuilt.valueOutSat, @pubkeyHashK1, amount, serverPubKey, 0
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, bignum(@agreementTxT1Unbuilt.valueOutSat), @pubkeyHashK1, amount, serverPubKey, 0
 

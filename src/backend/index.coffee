@@ -1,5 +1,6 @@
 h5bp = require 'h5bp'
 path = require 'path'
+bignum = require "../node_modules/bitcore/node_modules/bignum"
 logger = require "#{__dirname}/logger"
 Channel = require "#{__dirname}/channel"
 
@@ -22,7 +23,7 @@ app.get '/', (req, res) ->
   pubkey = req.query.pubkey
   privkey = req.query.privkey
 
-  channel = new Channel(pubkey, privkey, 100000000)
+  channel = new Channel(pubkey, privkey, bignum('100000000'))
   channel.createAndCommit().then(
     (result) ->
       # return res.send(500, err.message) if err?
@@ -34,7 +35,7 @@ app.get '/', (req, res) ->
         # example
         interval = setInterval(
           ->
-            channel.makeNewPayment(10000000).then(
+            channel.makeNewPayment(bignum('10000000')).then(
               (result) ->
                 res.write "New micropayment negotatiated\n----\nDOING X\n----\n"
               (err) ->
