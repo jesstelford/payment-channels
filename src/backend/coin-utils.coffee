@@ -40,6 +40,7 @@ module.exports =
 
     BlockApi.unspentOutputs pubkeyHex1, (err, utxos) ->
 
+      console.log "UTXOs:", utxos
       # partially build the transaction here, and let it be signed elsewhere
       builder = new Builder(opts)
       builder.setUnspent(utxos)
@@ -66,15 +67,6 @@ module.exports =
     # txToRefundHex = txToRefund.serialize().toString('hex')
     txToRefundHexScriptPubkey = txToRefund.outs[0].s.toString('hex')
 
-    utxos = [{
-      # address: "abc123", # Looking through bitcore implys we don't need this for a multisig input
-      txid: txToRefund.getHash().toString('hex'),
-      vout: 0, # There should only be a single output for the transactoin, so it's always vout number 0
-      scriptPubKey: txToRefundHexScriptPubkey,
-      amountSat: totalRefund
-      confirmations: 1
-    }]
-
     outs = [{
       address: refundPubKey,
       amountSat: totalRefund.sub(amountNotRefundedK2)
@@ -97,6 +89,12 @@ module.exports =
       # necessarily been transmitted into the network, we need to flag that we
       # could be spending an unconfirmed output
       builderOpts.spendUnconfirmed = true
+
+    console.log "REFUND TX UTXOs:", txToRefund.ins
+
+    # FIXME: Get the selected unspent transaction outputs from txToRefund which
+    # is an instance of a Bitcore Transaction
+    utxos = []
 
     builder = new Builder(builderOpts)
       .setUnspent(utxos)
