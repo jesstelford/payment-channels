@@ -8,8 +8,10 @@ BlockApi = require "#{__dirname}/adapters/blockio"
 
 T1INPUT_ID_FOR_T2_T3 = 0
 
-opts =
-  network: networks.testnet
+opts = network: if process.env.NODE_ENV is 'production'
+  networks.livenet
+else
+  networks.testnet
 
 module.exports =
   decodePubkey: (hexStr) ->
