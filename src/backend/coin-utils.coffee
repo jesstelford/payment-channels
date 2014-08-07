@@ -6,9 +6,6 @@ networks = require "#{__dirname}/networks.js"
 BlockApi = require "#{__dirname}/adapters/blockio"
 
 
-# TODO: Research: What's riskier; 1) Using satoshi's and worry about overflowing
-# the integer type, or 2) Using BTC's and worry about Javascript's innacuracies?
-
 T1INPUT_ID_FOR_T2_T3 = 0
 
 opts =
