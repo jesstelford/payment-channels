@@ -26,13 +26,13 @@ module.exports = class
 
   constructor: (@pubkeyHashK1, @privkeyK1, @maxPaymentSatoshi) ->
 
-  createAndCommit: (callback) ->
+  createAndCommit: ->
 
     params = {}
 
     console.info "Opening the channel"
 
-    rpcClient.request("channel.open", params).then(
+    return rpcClient.request("channel.open", params).then(
       (result) =>
 
         @_processNewChannel result
@@ -52,9 +52,6 @@ module.exports = class
 
         return @_createFirstPaymentTx()
 
-    ).done(
-      (result) => callback null, result
-      callback
     )
 
   ###
@@ -90,14 +87,14 @@ module.exports = class
 
     # promisify the node style method
     return Q.nfcall(CoinUtils.build2of2MultiSigTx, @pubkeyHashK1, serverPubkeyK2, @maxPaymentSatoshi).then(
-      (multiSigTxBuilder) ->
+      (multiSigTxBuilder) =>
         console.info "built 2of 2"
         # TODO: What about all the input transactions? What are they signed with?
         # It should be that the only unspent output is for the channel id's
         # address. Ie; the user must transfer coins to a new wallet for each
         # channel use. Alternatively (and better), we can move to p2sh multi-sig
-        multiSigTx = multiSigTxBuilder.sign([@privkeyK1])
-        callback null, multiSigTx
+        console.info "PRIVKEY:", @privkeyK1
+        return multiSigTxBuilder.sign([@privkeyK1])
     )
 
   _buildAndSendTimelockedRefundTx: ->

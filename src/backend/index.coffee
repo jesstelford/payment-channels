@@ -24,7 +24,7 @@ app.get '/', (req, res) ->
   privkey = req.query.privkey
 
   channel = new Channel(pubkey, privkey, bignum('100000000'))
-  channel.createAndCommit().then(
+  channel.createAndCommit().done(
     (result) ->
       # return res.send(500, err.message) if err?
       res.write 200, "Payment channel created\n"
