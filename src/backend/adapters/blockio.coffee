@@ -3,7 +3,7 @@ request = require 'request'
 
 buildUrl = (address) ->
   # TODO: Build a valid GET url
-  return "#{address}"
+  return "http://block.io/#{address}"
 
 ###
 Expected output format:
@@ -28,6 +28,16 @@ unspentOutputs = (address, next) ->
 
     if not err? and (response.statusCode isnt 200 or (body.error? and body.success isnt 1))
       err = body.err
+
+    body = [{
+      address: address
+      txid: "39c71ebda371f75f4b854a720eaf9898b237facf3c2b101b58cd4383a44a6adc"
+      vout: 1
+      scriptPubKey: "76a914e867aad8bd361f57c50adc37a0c018692b5b0c9a88ac"
+      amount: 0.4296
+      amountSat: 42960000
+      confirmations: 1
+    }]
 
     next err, body
 
