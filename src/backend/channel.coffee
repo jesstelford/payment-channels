@@ -99,8 +99,8 @@ module.exports = class
 
   _buildAndSendTimelockedRefundTx: ->
 
-    @_buildTimelockedRefundTx()
-    params = @_prepareRefundTxForServer()
+    t1InIdx = @_buildTimelockedRefundTx()
+    params = @_prepareRefundTxForServer t1InIdx
 
     console.info "Setting Refund"
     return rpcClient.request("channel.setRefund", params)
@@ -115,14 +115,16 @@ module.exports = class
     refundTxInfo = @_createRefundTxT2 @timeLock
     console.info "Created T2"
     @refundTxT2 = refundTxInfo.tx.build()
+    return refundTxInfo.t1InIdx
 
-  _prepareRefundTxForServer: ->
+  # @param t1InIdx the input id of the T1 transaction (that the server doesn't yet know about)
+  _prepareRefundTxForServer: (t1InIdx) ->
 
     return {
       "channel.id": @channelId # The id returned from "channel.open"
       pubkey: @pubkeyHashK1 # pubkey of client
       tx: @refundTxT2.serialize().toString('hex') # the refund transaction, hex encoded (unsigned)
-      txInIdx: refundTxInfo.t1InIdx # the input id of the T1 transaction (that the server doesn't yet know about)
+      txInIdx: t1InIdx
     }
 
   _createFirstPaymentTx: ->
