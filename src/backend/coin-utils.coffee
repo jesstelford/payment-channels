@@ -51,22 +51,20 @@ module.exports =
       callback null, builder
 
   ###
-  # @param txToRefund a bitcore transaction to refund
+  # @param txUbuilt [in,out] a bitcore TransactionBuilder instance to modify with latest tx info (with input/outputs already set)
   # @param refundPubKey Public key to send the refund to
   # @param amountNotRefundedK2 satoshi's to pay server (an instance of bignum)
   # @param serverPubkeyK2 server's public key
   # @param timeToLock Unix timestamp before which the transaction will not be accepted into a block
   ###
-  buildRollingRefundTxFromMultiSigOutput: (txToRefund, totalRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
+  buildRollingRefundTxFromMultiSigOutput: (txUnbuilt, totalRefund, refundPubKey, amountNotRefundedK2, serverPubkeyK2, timeToLock) ->
 
     if not amountNotRefundedK2 or amountNotRefundedK2.eq(0) then amountNotRefundedK2 = bignum(0)
 
     if amountNotRefundedK2.gt(totalRefund)
       throw new Error "Cannot pay out more than the total original agreement"
 
-    # txToRefundHex = txToRefund.serialize().toString('hex')
-    txToRefundHexScriptPubkey = txToRefund.outs[0].s.toString('hex')
-
+    # We start by assuming all outputs are going back as a refund
     outs = [{
       address: refundPubKey,
       amountSat: totalRefund.sub(amountNotRefundedK2)
@@ -83,18 +81,15 @@ module.exports =
 
     builderOpts = _({}).extend opts
 
+    # Since the previous transaction we're attempting to spend hasn't
+    # necessarily been transmitted into the network, we need to flag that we
+    # could be spending an unconfirmed output
+    builderOpts.spendUnconfirmed = true
+
     if timeToLock > 0
-      builderOpts.lockTime = timeToLock
-      # Since the previous transaction we're attempting to spend hasn't
-      # necessarily been transmitted into the network, we need to flag that we
-      # could be spending an unconfirmed output
-      builderOpts.spendUnconfirmed = true
+     builderOpts.lockTime = timeToLock
 
-    console.log "REFUND TX UTXOs:", txToRefund.ins
-
-    # FIXME: Get the selected unspent transaction outputs from txToRefund which
-    # is an instance of a Bitcore Transaction
-    utxos = []
+    utxos = txUnbuilt.getSelectedUnspent()
 
     builder = new Builder(builderOpts)
       .setUnspent(utxos)

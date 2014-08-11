@@ -19,7 +19,7 @@ module.exports = class
   serverPubkeyK2: undefined
   maxPaymentSatoshi: undefined
   agreementTxT1: undefined
-  agreementTxT1Unbuilt: undefined
+  rollingTxUnbuilt: undefined
   agreementTxT1ScriptPubkey: undefined
   refundTxT2: undefined
   paymentTotalTx3: bignum('0')
@@ -40,7 +40,7 @@ module.exports = class
         return @_createAgreementTxT1 @serverPubkeyK2
 
     ).then(
-      (@agreementTxT1Unbuilt) =>
+      (@rollingTxUnbuilt) =>
 
         return @_buildAndSendTimelockedRefundTx()
 
@@ -107,7 +107,7 @@ module.exports = class
 
   _buildTimelockedRefundTx: ->
 
-    @agreementTxT1 = @agreementTxT1Unbuilt.build()
+    @agreementTxT1 = @rollingTxUnbuilt.build()
     console.info "Created T1"
 
     @agreementTxT1ScriptPubkey = @agreementTxT1.outs[0].s.toString('hex')
@@ -144,11 +144,11 @@ module.exports = class
 
 
   _createRefundTxT2: (timeToLock) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, bignum(@agreementTxT1Unbuilt.valueOutSat), @pubkeyHashK1, bignum(0), undefined, timeToLock
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @rollingTxUnbuilt, bignum(@rollingTxUnbuilt.valueOutSat), @pubkeyHashK1, bignum(0), undefined, timeToLock
 
   _verifyServerSignedT2: (signature) ->
     return CoinUtils.verifyTxSig @refundTxT2, signature
 
   _createPayTxT3: (amount, serverPubKey) ->
-    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @agreementTxT1, bignum(@agreementTxT1Unbuilt.valueOutSat), @pubkeyHashK1, amount, serverPubKey, 0
+    return CoinUtils.buildRollingRefundTxFromMultiSigOutput @rollingTxUnbuilt, bignum(@rollingTxUnbuilt.valueOutSat), @pubkeyHashK1, amount, serverPubKey, 0
 
