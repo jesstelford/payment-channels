@@ -29,6 +29,12 @@ unspentOutputs = (address, next) ->
     method: 'GET'
     json: true
 
+  # Mock out the call to sochain in dev
+  if process.env.NODE_ENV is 'development'
+    request = (opt, cb) ->
+      result = {"status":"success","data":{"network":"BTCTEST","address":"mgwqzy6pF5BSc72vxHBFSnnhNEBcV4TJzV","txs":[{"txid":"3218e0dff04a299a56cac0a14a012ded03d73c4e73f2d224a5ec24b0d99b7b57","output_no":0,"script_asm":"OP_DUP OP_HASH160 0fad45372cc2267b9df9680465c1a54dcbebc4db OP_EQUALVERIFY OP_CHECKSIG","script_hex":"76a9140fad45372cc2267b9df9680465c1a54dcbebc4db88ac","value":"0.10000000","confirmations":1315,"time":1407393993},{"txid":"7e2b9220253d54a7b38ea62a5bc197ae684f68a5ccff726e69f74cb809eeaf90","output_no":0,"script_asm":"OP_DUP OP_HASH160 0fad45372cc2267b9df9680465c1a54dcbebc4db OP_EQUALVERIFY OP_CHECKSIG","script_hex":"76a9140fad45372cc2267b9df9680465c1a54dcbebc4db88ac","value":"3.00000000","confirmations":1315,"time":1407393993}]}}
+      cb(null, {statusCode: 200}, result)
+
   request options, (err, response, body) ->
 
     if not err? and (response.statusCode isnt 200 or (body.status? and body.status isnt "success"))
