@@ -32,7 +32,7 @@ unspentOutputs = (address, next) ->
   request options, (err, response, body) ->
 
     if not err? and (response.statusCode isnt 200 or (body.status? and body.status isnt "success"))
-      err = body.err
+      err = body.err or new Error body
 
     result = _(body.data.txs).map (txn) ->
       return {
