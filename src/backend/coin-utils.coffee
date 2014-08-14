@@ -1,7 +1,9 @@
 _ = require 'underscore'
 bignum = require "../node_modules/bitcore/node_modules/bignum"
 Builder = require 'bitcore/lib/TransactionBuilder'
+buffertools = require 'buffertools'
 Key = require 'bitcore/lib/Key'
+Address = require 'bitcore/lib/Address'
 networks = require "#{__dirname}/networks.js"
 BlockApi = require "#{__dirname}/adapters/sochain"
 
@@ -21,9 +23,16 @@ module.exports =
     key.public = buf
     return key
 
-  verifyTxSig: (tx, sig) ->
-    hash = tx.serialize().toString('hex')
-    return Key.verifySignatureSync hash, sig
+  verifyTxSig: (tx, pubkey, sig) ->
+    # TODO: Is this the correct hash?
+    hash = tx.getHash()
+    key = new Key()
+    # TODO: Is this the correct way to set the public key?
+    key.public = new Buffer(pubkey, 'hex')
+    # TODO: Is this the correct way to check if the signature matches the
+    # transaction? OR, do we have to have an actually signed transaction to
+    # check against?
+    return key.verifySignatureSync hash, new Buffer(sig, 'hex')
 
   build2of2MultiSigTx: (pubkeyHex1, pubkeyHex2, amountSat, callback) ->
 
@@ -99,3 +108,6 @@ module.exports =
       tx: builder
       t1InIdx: T1INPUT_ID_FOR_T2_T3 # Due to the way we constructed the transaction above, the in id will always be at index 0
     }
+
+  addressFromPubkey: (pubkey) ->
+    return Address.fromPubKey(pubkey, opts.network.name).toString()

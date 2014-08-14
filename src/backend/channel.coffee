@@ -78,7 +78,7 @@ module.exports = class
   _processNewChannel: (newChannel) ->
     # Use the pubkey as the channel ID as it's unique. The client should be
     # creating a unique pubkey per channel anyway.
-    @channelId = newChannel.pubkey
+    @channelId = newChannel["channel.id"]
     @serverPubkeyK2 = newChannel.pubkey
     @timeLock = newChannel["timelock.prefer"]
 
@@ -149,7 +149,7 @@ module.exports = class
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @rollingTxUnbuilt, bignum(@rollingTxUnbuilt.valueOutSat), @pubkeyHashK1, bignum(0), undefined, timeToLock
 
   _verifyServerSignedT2: (signature) ->
-    return CoinUtils.verifyTxSig @refundTxT2, signature
+    return CoinUtils.verifyTxSig @refundTxT2, @serverPubkeyK2, signature
 
   _createPayTxT3: (amount, serverPubKey) ->
     return CoinUtils.buildRollingRefundTxFromMultiSigOutput @rollingTxUnbuilt, bignum(@rollingTxUnbuilt.valueOutSat), @pubkeyHashK1, amount, serverPubKey, 0
